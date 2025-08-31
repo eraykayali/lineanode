@@ -1,43 +1,35 @@
 #!/bin/bash
 set -e
 
-echo "Starting Linea Besu (Basic Profile) installation..."
+echo "=== Linea Besu (Basic Profile) Kurulumu Başlıyor ==="
 
-# Install dependencies
-echo "Installing required packages..."
+# Gerekli paketler
+echo "[1/6] Paketler yükleniyor..."
 export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update -qq > /dev/null
-sudo apt-get install -y -qq curl > /dev/null
+sudo apt-get install -y -qq curl wget git > /dev/null
 
-# Install Docker
-echo "Installing Docker..."
+# Docker kurulumu
+echo "[2/6] Docker kurulumu kontrol ediliyor..."
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o get-docker.sh
     sudo sh get-docker.sh > /dev/null
     rm get-docker.sh
 fi
 
-# Configure Docker permissions
-echo "Configuring Docker permissions..."
-sudo usermod -aG docker $USER
+# Docker Compose v2 kontrol
+if ! docker compose version &> /dev/null; then
+    echo "[!] Docker Compose v2 bulunamadı, lütfen manuel kurun."
+    exit 1
+fi
 
-# Download and configure Linea node in /mnt/linea
-echo "Downloading and configuring Linea node in /mnt/linea..."
+# Eski docker container & volume temizliği
+echo "[3/6] Docker artıklarını temizliyor..."
+sudo docker compose -f /mnt/linea/linea-node/docker-compose.yaml down --remove-orphans 2>/dev/null || true
+sudo docker system prune -af --volumes -y
+
+# /mnt/linea dizini hazırlanıyor
+echo "[4/6] Dizini temizliyor ve oluşturuyor..."
+sudo rm -rf /mnt/linea
 sudo mkdir -p /mnt/linea/linea-node
-sudo chown $USER:$USER /mnt/linea/linea-node
-cd /mnt/linea/linea-node
-wget -q https://raw.githubusercontent.com/Consensys/linea-monorepo/main/linea-besu-package/docker/docker-compose-basic-mainnet.yaml -O docker-compose.yaml
-
-PUBLIC_IP=$(curl -s ifconfig.me)
-sed -i "s/--p2p-host=.*/--p2p-host=${PUBLIC_IP}/" docker-compose.yaml
-
-# Start the node
-echo "Starting the Linea node..."
-sudo docker compose -f docker-compose.yaml up -d
-
-# Final message
-echo ""
-echo "Linea (Basic) node installation complete in /mnt/linea/linea-node."
-echo "Important: To use Docker without 'sudo', you must log out and log back in."
-echo ""
-echo "To check the logs, run: cd /mnt/linea/linea-node && sudo docker compose logs -f"
+sudo chown $USER:$USER /mnt/linea
