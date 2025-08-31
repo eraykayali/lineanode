@@ -21,10 +21,11 @@ fi
 echo "Configuring Docker permissions..."
 sudo usermod -aG docker $USER
 
-# Download and configure Linea node
-echo "Downloading and configuring Linea node..."
-mkdir -p ~/linea-node
-cd ~/linea-node
+# Download and configure Linea node in /mnt/linea
+echo "Downloading and configuring Linea node in /mnt/linea..."
+sudo mkdir -p /mnt/linea/linea-node
+sudo chown $USER:$USER /mnt/linea/linea-node
+cd /mnt/linea/linea-node
 wget -q https://raw.githubusercontent.com/Consensys/linea-monorepo/main/linea-besu-package/docker/docker-compose-basic-mainnet.yaml -O docker-compose.yaml
 
 PUBLIC_IP=$(curl -s ifconfig.me)
@@ -36,7 +37,7 @@ sudo docker compose -f docker-compose.yaml up -d
 
 # Final message
 echo ""
-echo "Linea (Basic) node installation complete."
+echo "Linea (Basic) node installation complete in /mnt/linea/linea-node."
 echo "Important: To use Docker without 'sudo', you must log out and log back in."
 echo ""
-echo "To check the logs, run: cd ~/linea-node && sudo docker compose logs -f"
+echo "To check the logs, run: cd /mnt/linea/linea-node && sudo docker compose logs -f"
